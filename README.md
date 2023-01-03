@@ -2,7 +2,7 @@
 
 Update 1/3/2022: I have decided to make the latest version publicly available on this new github. PID parameters still 
 need to be tuned to your hardware and entered in main.cpp. My parameters are included. Global variables need to be set for your circumstances,
-e.g., gps coordinates, altitude, gpio pins, etc in global.cpp.
+e.g., gps coordinates, elevation, gpio pins, etc in global.cpp.
 
 Trueblood, M. and Genet, R.M., Telescope Control (Second English Edition), Willmann-Bell, Inc. (Richmond, 1997). 
 
