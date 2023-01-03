@@ -1,22 +1,8 @@
 # TelescopeMount
 
-1/24/21: apt-get has been acting funny lately, so wherever I indicate using that command, use aptitude instead.
-Due to this reason, undocumented kernel updates to 18.04, and cpu performance management settings on 18.04,
-this repository has become more trouble than it is worth to maintain, and this is the final update. Work on
-the proprietary version for N-Dimensional Technologies (https://n-dtech.com) will continue as planned. That
-being said, this version compiles and runs fine as of today on Ubuntu 18.04 Raspberry Pi 4.
-
-1/23/21: Clarification of copyright on the updated PID algorithm is now added. The license on the file
-pid.pseudo is to be considered separate from the rest of this repository, as is indicated
-in comments at the top of the file. It is purely provided for demonstrative purposes.
-
-Second Update of 1/19/21: A good starting point for PID settings, assuming you use the updated algorithm, would be
-P = 20000, I = 1000, and D = 26. These are the parameters I use currently. Ultimately, however, the optimal values
-for these parameters will depend on a number of factors, including motor torque, power output, mount resistance to
-applied torque, and damping. I suggest reading up on the subject and mathematics of PID, before even attempting 
-such an endeavor. When I said "I cannot stress how important this is," I meant it. Furthermore, a good reference
-for choosing the appropriate DC motor (as well as everything else related to mount design and construction)is the
-following: 
+Update 1/3/2022: I have decided to make the latest version publicly available on this new github. PID parameters still 
+need to be tuned to your hardware and entered in main.cpp. My parameters are included. Global variables need to be set for your circumstances,
+e.g., gps coordinates, altitude, gpio pins, etc in global.cpp.
 
 Trueblood, M. and Genet, R.M., Telescope Control (Second English Edition), Willmann-Bell, Inc. (Richmond, 1997). 
 
@@ -25,12 +11,6 @@ If you are taking the project seriously, I would recommend another book as well:
 Smart, W.M., Textbook on Spherical Astronomy (Sixth Edition, reprinted), Cambridge University Press (Cambridge, 1979).
 
 At some point, you'll need to account for geometric errors, which are covered in the Trueblood/Genet book. Good luck.
-
-Update 1/19/21: I cleaned up the updated PID algorithm, even though I said 8 months ago that I would never update
-this repository ever again. You have to stay one step ahead of your critics...
-
-Update 1/18/21: It has come to my attention that the PID algorithm was never updated in this version. Uploaded as 
-optional files, the updated PID algorithm is the much improved version I have been using for the past 7 months.
 
 Here is some telescope mount control software which can be used with any mount using DC gear motors and incremental encoders,
 all controlled by a Raspberry Pi 3b+ (untested on other versions). This software does not include geometric corrections for 
