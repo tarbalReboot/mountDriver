@@ -4,7 +4,10 @@
 #include <QMainWindow>
 #include <QLineEdit>
 #include <QPushButton>
-#include <boost/multiprecision/gmp.hpp>
+#include <QCameraInfo>
+#include <QCameraImageCapture>
+#include <QMediaRecorder>
+#include <camera.h>
 
 namespace Ui {
 class MainWindow;
@@ -29,9 +32,9 @@ public:
 
 
 private slots:
-    void on_trackButton_clicked();
+    void on_haltButton_clicked();
 
-    void on_calibrateButton_clicked();
+    void on_trackButton_clicked();
 
     void on_upButton_clicked();
 
@@ -41,10 +44,30 @@ private slots:
 
     void on_leftButton_clicked();
 
-private:
-    bool calibrating;
+    void setCamera(const QCameraInfo &cameraInfo);
 
+    void record();
+    void pause();
+    void stop();
+
+    void takeImage();
+    void displayCaptureError(int, QCameraImageCapture::Error, const QString &errorString);
+
+    void displayRecorderError();
+    void displayCameraError();
+
+    void setExposureCompensation(int index);
+
+    void readyForCapture(bool ready);
+    void imageSaved(int id, const QString &fileName);
+
+
+    void on_toggleCamera_clicked();
+
+private:
     Ui::MainWindow *ui;
+
+    astroCam camFeed;
 
     QLineEdit *NGCCode;
     QLineEdit *ICCode;
@@ -56,10 +79,19 @@ private:
     QPushButton *rightButton;
     QPushButton *slewButton;
     QPushButton *trackButton;
-    QPushButton *calibrate;
     QPushButton *clearButton;
     QPushButton *updateButton;
+    QPushButton *stopButton;
 
+    QCamera *camera = nullptr;
+    QCameraImageCapture *imageCapture = nullptr;
+    QMediaRecorder* mediaRecorder = nullptr;
+
+    QImageEncoderSettings imageSettings;
+    QVideoEncoderSettings videoSettings;
+    QString videoContainerFormat;
+    bool isCapturingImage = false;
+    bool applicationExiting = false;
 };
 
 

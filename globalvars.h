@@ -3,15 +3,16 @@
 #include "encodercount.h"
 
 extern int piNumber;
-extern bool programRunning;
-extern bool tracking;
+extern int pwmRange;
 
-extern double latitude;
-extern double longitude;
-extern double temperature;
-extern double pressure;
-extern double humidity;
-extern double wavelength;
+extern int backlashAz;
+extern int backlashAlt;
+extern int lastDirectionAz;
+extern int lastDirectionAlt;
+
+extern bool programRunning;
+extern bool camRunning;
+extern bool tracking;
 
 extern const int pinRotateA;
 extern const int pinRotateB;
@@ -26,6 +27,8 @@ extern const int encoderInclineB;
 
 extern const double polarisRA;
 extern const double polarisDEC;
+extern const double latitude;
+extern const double longitude;
 
 extern double targetAz;
 extern double targetAlt;
@@ -38,6 +41,9 @@ extern double angleZen;
 extern double AltInc;
 extern double AzInc;
 extern double incremental;
+
+extern double errSumAz;
+extern double errSumAlt;
 
 extern int counterAz;
 extern int counterAlt;

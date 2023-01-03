@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <QMutex>
 
-encoderCount::encoderCount(unsigned int gpioNumberA, unsigned int gpioNumberB, re_decoderCB_t callback)
+encoderCount::encoderCount(unsigned int pi, unsigned int gpioNumberA, unsigned int gpioNumberB, re_decoderCB_t callback)
 {
     levelARotate = gpio_read(piNumber, encoderRotateA);
     levelBRotate = gpio_read(piNumber, encoderRotateB);
@@ -41,19 +41,19 @@ void encoderCount::_pulseEx(int pinum, unsigned int gpio, unsigned int level, ui
 {
     if(pinum > -1)
     {
-        encoderCount *mySelf = (encoderCount *) user;
+        encoderCount *mySelf;
+        mySelf = (encoderCount*) user;
 
         mySelf->_pulse(gpio, level);
 
+//        delete mySelf;
         return;
     }
 }
 
-void encoderCount::_pulse(int gpio, int level)
+void encoderCount::_pulse(int gpio, unsigned int level)
 {
-    QMutex mutie;
     int index;
-    mutie.lock();
        if(gpio == encoderRotateA)
        {
            levelARotate = level;
@@ -94,7 +94,6 @@ void encoderCount::_pulse(int gpio, int level)
            myCallback(outcome[index], whichAxisB);
            lastABIncline = currentABIncline;
        }
-       mutie.unlock();
 }
 
 
@@ -106,13 +105,15 @@ void encoderCount::CBcancel(void)
 
 void encoderCount::speedOutput()
 {
-    double debugSpeed = std::abs(debugAz - counterAz) * 360 * 3600 / (quadratureStates * 28.8);
+    double debugSpeed = std::abs(debugAz - counterAz) * 360 * 3600 / (40000 * 28.8);
     std::cout << " Az: " << counterAz << " " << debugAz << " " << debugSpeed << " " << "arcsec/sec" << std::endl;
     debugAz = counterAz;
 }
 
 void encoderCount::run()
 {
+    QMutex mutie;
+    mutie.lock();
     cba = callback_ex(piNumber, pinA, EITHER_EDGE, _pulseEx, this);
     cbb = callback_ex(piNumber, pinB, EITHER_EDGE, _pulseEx, this);
 
@@ -123,4 +124,5 @@ void encoderCount::run()
         continue;
     }
     encoderCount::CBcancel();
+    mutie.unlock();
 }

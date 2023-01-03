@@ -7,7 +7,7 @@ class PID : public QThread
 {
 public:
     PID(float kp, float ki, float kd, int axis);
-    void motorControl(double speed, int motorLead1, int motorLead2, bool forward);
+    void motorControl(double speed, int axis, int motorLead1, int motorLead2, bool forward);
     void run();
 
 private:
@@ -33,15 +33,16 @@ private:
 
     struct timeval newTime, oldTime;
 
-    double errSum;
-
     double lastError;
+    double oldOutput;
+
+    bool sameSign(double d1, double d2);
 
     float KP;
     float KI;
     float KD;
     int axisID;
-    bool limitFlag;
+//    bool limitFlag;
     double lastInput;
     double hourAngle;
     double CIOdec;

@@ -4,13 +4,13 @@ Update 1/3/2022: I have decided to make the latest version publicly available on
 need to be tuned to your hardware and entered in main.cpp. My parameters are included. Global variables need to be set for your circumstances,
 e.g., gps coordinates, elevation, gpio pins, etc in global.cpp.
 
+At some point, you'll need to account for geometric errors, which are covered in: 
+
 Trueblood, M. and Genet, R.M., Telescope Control (Second English Edition), Willmann-Bell, Inc. (Richmond, 1997). 
 
 If you are taking the project seriously, I would recommend another book as well:
 
 Smart, W.M., Textbook on Spherical Astronomy (Sixth Edition, reprinted), Cambridge University Press (Cambridge, 1979).
-
-At some point, you'll need to account for geometric errors, which are covered in the Trueblood/Genet book. Good luck.
 
 Here is some telescope mount control software which can be used with any mount using DC gear motors and incremental encoders,
 all controlled by a Raspberry Pi 4b (preferred) or 3b+ (untested on other versions). This software does not include geometric corrections for 

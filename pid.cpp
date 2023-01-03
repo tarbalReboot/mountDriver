@@ -1,3 +1,11 @@
+/* 
+With exception to references of the external sofa library,
+the following PID algorithm is 
+© John E. Petersen III, 2021.
+Therefore, this PID algorithm cannot be used for profit
+in whole or in part
+without the express written consent of John E. Petersen III.
+*/
 #include "pid.h"
 #include "mainwindow.h"
 #include "globalvars.h"
@@ -22,9 +30,8 @@ PID::PID(float kp, float ki, float kd, int axis)
 
     datetime dtime = getTime(to_iso_string(boost::posix_time::microsec_clock::universal_time()));
     iauDtf2d("UTC", dtime.year, dtime.month, dtime.day, dtime.hour, dtime.minute, dtime.second + dtime.fraction / 1e6, &jTime1, &jTime2);
-    iauAtco13(rAscension, declination, 0.0, 0.0, 0.0, 0.0, jTime1, jTime2, 0.0, longitude,
-                      latitude, elevation, 0.0, 0.0, pressure, temperature, humidity, wavelength, &targetAz, &targetZen, &hourAngle, &CIOdec, &CIORA, &EqOrigins);
-
+    iauAtco13(polarisRA, polarisDEC, 0.0, 0.0, 0.0, 0.0, jTime1, jTime2, 0.0, longitude*3.141592654/180,
+        latitude*3.141592654/180, 356.616, 0.0, 0.0, 1013.25, 16.0, 0.5, 0.59, &angleAz, &angleZen, &hourAngle, &CIOdec, &CIORA, &EqOrigins);
     angleAlt = clampAlt(angleZen);
 
     counterAlt = (int)((angleAlt / (2 * 3.141592654)) * gearRatio * quadratureStates);
@@ -35,36 +42,55 @@ PID::PID(float kp, float ki, float kd, int axis)
 
 double PID::returnPID(float kp, float ki, float kd, int axis)
 {
-    /*How long since we last calculated*/
     gettimeofday(&newTime, NULL);
 
     double timeChange = (double)(newTime.tv_usec - oldTime.tv_usec) / 1e6;
 
-    /*Compute all the working error variables*/
-    double error;
-    double dInput;
+
     if(axis == 0)
     {
-        error = targetAz - angleAz;
-        dInput = angleAz - lastInput;
-        lastInput = angleAz;
+        double error = targetAz - angleAz;
+            errSumAz += (error * timeChange);
+        double dErr = (error - lastError) / timeChange;
+        double output = (kp * error) + (ki * errSumAz) + (kd * dErr);
+
+        if(output > 0)
+            output -= std::abs(((output - oldOutput)*timeChange)/200);
+        else if(output < 0)
+            output += std::abs(((output - oldOutput)*timeChange)/200);
+
+//        report();
+        lastError = error;
+        oldTime = newTime;
+        oldOutput = output;
+        return output;
     }
     else
     {
-        error = targetAlt - angleAlt;
-        dInput = angleAlt - lastInput;
-        lastInput = angleAlt;
+        double error = targetAlt - angleAlt;
+            errSumAlt += (error * timeChange);
+        double dErr = (error - lastError) / timeChange;
+        double output = (kp * error) + (ki * errSumAz) + (kd * dErr);
+
+        if(output > 0)
+            output -= std::abs(((output - oldOutput)*timeChange)/200);
+        else if(output < 0)
+            output += std::abs(((output - oldOutput)*timeChange)/200);
+
+//        report();
+        lastError = error;
+        oldTime = newTime;
+        oldOutput = output;
+        return output;
     }
-    errSum += (error * timeChange);
 
-    /*Compute PID Output*/
-    double output = kp * error + ki * errSum + (kd * dInput/timeChange);
+}
 
-    /*Remember some variables for next time*/
-    lastError = error;
-    oldTime = newTime;
-
-    return output;
+bool PID::sameSign(double d1, double d2)
+{
+    if(d1*d2 >= 0)
+        return true;
+    else return false;
 }
 
 PID::datetime PID::getTime(std::string str)
@@ -80,18 +106,19 @@ PID::datetime PID::getTime(std::string str)
     return dt;
 }
 
+// This method can print encoder states in terminal (run mountdriver from terminal) to assist in tuning PID parameters
 void PID::report()
 {
     debugTime += timeInterval;
     if(axisID==0)
     {
-        return;
-        std::cout << debugTime << " Az: " << counterAz << " " << targetAz * 180 / 3.141592654 << " " << angleAz * 180 / 3.141592654 << std::endl;
+//        return;
+        std::cout << debugTime << " Az: " << counterAz << " " << ((targetAz - angleAz) * 180 / 3.141592654) * 3600 << std::endl;
     }
     else
     {
-//        return;
-        std::cout << debugTime << " Alt: " << counterAlt << " " << targetAlt * 180 / 3.141592654 << " " << angleAlt * 180 / 3.141592654 << std::endl;
+        return;
+        std::cout << debugTime << " Alt: " << counterAlt << " " << ((targetAlt - angleAlt) * 180 / 3.141592654) * 3600 << std::endl;
     }
 }
 
@@ -131,36 +158,35 @@ double PID::clampAlt(double zen)
     else return alt;
 }
 
-void PID::motorControl(double speed, int motorLead1, int motorLead2, bool forward)
+void PID::motorControl(double speed, int axis, int motorLead1, int motorLead2, bool forward)
 {
     double difference;
 
     if(tracking)
     {
+        difference = speed/pwmRange;
 
-        difference = speed;
-
-        if(difference > 2)
-            difference = 2;
-        else if (difference < 0)
+        if (difference < 0)
         {
             difference = -difference;
-            if(difference > 2)
-                difference = 2;
         }
+
+        if(difference > 1)
+            difference = 1;
+
     }
 
-    else difference = speed / 512;
+    else difference = speed / pwmRange;
 
     if(!forward)
     {
         set_PWM_dutycycle(piNumber, motorLead2, 0);
-        set_PWM_dutycycle(piNumber, motorLead1, (int)(difference * 100));
+        set_PWM_dutycycle(piNumber, motorLead1, (int)(difference * pwmRange));
     }
     else
     {
         set_PWM_dutycycle(piNumber, motorLead1, 0);
-        set_PWM_dutycycle(piNumber, motorLead2, (int)(difference * 100));
+        set_PWM_dutycycle(piNumber, motorLead2, (int)(difference * pwmRange));
     }
 
 }
@@ -185,28 +211,30 @@ void PID::run()
         {
             datetime dtime = getTime(to_iso_string(boost::posix_time::microsec_clock::universal_time()));
             iauDtf2d("UTC", dtime.year, dtime.month, dtime.day, dtime.hour, dtime.minute, dtime.second + dtime.fraction / 1e6, &jTime1, &jTime2);
-            iauAtco13(rAscension, declination, 0.0, 0.0, 0.0, 0.0, jTime1, jTime2, 0.0, longitude,
-                      latitude, elevation, 0.0, 0.0, pressure, temperature, humidity, wavelength, &targetAz, &targetZen, &hourAngle, &CIOdec, &CIORA, &EqOrigins);
+            iauAtco13(rAscension, declination, 0.0, 0.0, 0.0, 0.0, jTime1, jTime2, 0.0, longitude*3.141592654/180,
+                      latitude*3.141592654/180, 356.616, 0.0, 0.0, 1013.25, 16.0, 0.5, 0.59, &targetAz, &targetZen, &hourAngle, &CIOdec, &CIORA, &EqOrigins);
 
             targetAlt = clampAlt(targetZen);
+
+
+            bool dir = turnForward(axisID);
 
             output = returnPID(KP, KI, KD, axisID);
 
 
             if(axisID == 0)
-                motorControl(std::abs(output), pinRotateA, pinRotateB, turnForward(axisID));
+                motorControl(std::abs(output), axisID, pinRotateA, pinRotateB, dir);
             else if(axisID == 1)
-                motorControl(std::abs(output), pinInclineA, pinInclineB, turnForward((axisID)));
+                motorControl(std::abs(output), axisID, pinInclineA, pinInclineB, dir);
 
-//            report();
 
         }
         else
         {
             if(axisID == 0)
-                motorControl(std::abs(AzInc), pinRotateA, pinRotateB, whichDirection(AzInc));
+                motorControl(std::abs(AzInc), 0, pinRotateA, pinRotateB, whichDirection(AzInc));
             else if(axisID == 1)
-                motorControl(std::abs(AltInc), pinInclineA, pinInclineB, whichDirection(AltInc));
+                motorControl(std::abs(AltInc), 1, pinInclineA, pinInclineB, whichDirection(AltInc));
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(timeInterval));

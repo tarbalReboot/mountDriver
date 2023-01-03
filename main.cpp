@@ -1,6 +1,3 @@
-// Copyright John Emil Petersen III 2019-2020
-// GNU Public License
-
 #include "mainwindow.h"
 #include "encodercount.h"
 #include <QApplication>
@@ -17,12 +14,11 @@ int main(int argc, char *argv[])
 
     piNumber = pigpio_start(NULL, NULL);
 
-    encoderCount countAz(encoderRotateA, encoderRotateB, actualCallback);
-    encoderCount countAlt(encoderInclineA, encoderInclineB, actualCallback);
+    encoderCount countAz(piNumber, encoderRotateA, encoderRotateB, actualCallback);
+    encoderCount countAlt(piNumber, encoderInclineA, encoderInclineB, actualCallback);
 
-    // PID values need to be tuned to your mount.
-    PID pidAz(1, 0.5, 0.5, 0);   // PID(P, I, D, axis)
-    PID pidAlt(1, 0.5, 0.5, 1);
+    PID pidAz(120000, 10.25, 760, 0);  // PID parameters for Az axis -- need to be tuned for a new mount
+    PID pidAlt(120000, 10.25, 740, 1);
 
     countAz.start(QThread::TimeCriticalPriority);
     countAlt.start(QThread::TimeCriticalPriority);
